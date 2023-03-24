@@ -10,15 +10,15 @@
     
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
     
-    <meta name="description" content="项目问题：实际生产过程中，有一批数据需要从redis同步到mysql种，但数据量比较大，大概在十万行左右，每个数据属性在1000左右，属性以json格式存储到myisam引擎中，选择mysaim的原因是innodb存在单行长度限制，同时根据业务需要进行了垂直分表，把常用的字段单独建表存储我需要拼接一个超长字符串insert into sql，首先我想到的办法是用并行流，但是在实际操作过程中，并行流">
+    <meta name="description" content="1、Mysqlselect * 执行流程1、首先建立连接：通过用户名和密码与Mysql服务器建立连接，用户名密码不对会报错2、查询缓存：之前查询过的sql结果会以key-value形式存储到内存，有就直接返回，没有执行后续（update会使缓存失效）3、解析器解析：分析sql语法是否正确4、优化器优化：走那个索引，join选择表的顺序5、执行器：权限检查，先打开数据表，然后优化器根据存储引擎执行查">
 <meta property="og:type" content="website">
 <meta property="og:title" content="一半一半">
 <meta property="og:url" content="http://example.com/force/index.html">
 <meta property="og:site_name" content="一半一半">
-<meta property="og:description" content="项目问题：实际生产过程中，有一批数据需要从redis同步到mysql种，但数据量比较大，大概在十万行左右，每个数据属性在1000左右，属性以json格式存储到myisam引擎中，选择mysaim的原因是innodb存在单行长度限制，同时根据业务需要进行了垂直分表，把常用的字段单独建表存储我需要拼接一个超长字符串insert into sql，首先我想到的办法是用并行流，但是在实际操作过程中，并行流">
+<meta property="og:description" content="1、Mysqlselect * 执行流程1、首先建立连接：通过用户名和密码与Mysql服务器建立连接，用户名密码不对会报错2、查询缓存：之前查询过的sql结果会以key-value形式存储到内存，有就直接返回，没有执行后续（update会使缓存失效）3、解析器解析：分析sql语法是否正确4、优化器优化：走那个索引，join选择表的顺序5、执行器：权限检查，先打开数据表，然后优化器根据存储引擎执行查">
 <meta property="og:locale" content="en_US">
-<meta property="article:published_time" content="2023-03-24T06:11:41.477Z">
-<meta property="article:modified_time" content="2023-02-01T07:16:24.077Z">
+<meta property="article:published_time" content="2023-03-24T06:24:27.960Z">
+<meta property="article:modified_time" content="2023-03-24T06:24:27.960Z">
 <meta property="article:author" content="John Doe">
 <meta name="twitter:card" content="summary">
     
@@ -180,189 +180,7 @@
 
             
 
-            <p>项目问题：<br>实际生产过程中，有一批数据需要从redis同步到mysql种，但数据量比较大，大概在十万行左右，每个数据属性在1000左右，<br>属性以json格式存储到myisam引擎中，选择mysaim的原因是innodb存在单行长度限制，同时根据业务需要进行了垂直分表，把常用的字段单独建表存储<br>我需要拼接一个超长字符串insert into sql，首先我想到的办法是用并行流，但是在实际操作过程中，并行流内使用线程不安全集合的add操作，导致出现空指针异常，后来百度发现可以通过使用线程安全集合Collections.synch(new LinkedList)解决了这个问题，<br>同时考虑到sql比较长，数据库存在数据传输限制，所以又采用了线程池执行多个insert into</p>
-<p>1、初始化redis存储结构<br>2、mysql的字段 json格式</p>
-<p>存储历史数据表  大数据量我建议用Hbase，但是甲方不同</p>
-<h3 id="1、Mysql"><a href="#1、Mysql" class="headerlink" title="1、Mysql"></a><strong>1、Mysql</strong></h3><h5 id="select-执行流程"><a href="#select-执行流程" class="headerlink" title="select * 执行流程"></a>select * 执行流程</h5><p>1、首先建立连接：通过用户名和密码与Mysql服务器建立连接，用户名密码不对会报错<br>2、查询缓存：之前查询过的sql结果会以key-value形式存储到内存，有就直接返回，没有执行后续（update会使缓存失效）<br>3、解析器解析：分析sql语法是否正确<br>4、优化器优化：走那个索引，join选择表的顺序<br>5、执行器：权限检查，先打开数据表，然后优化器根据存储引擎执行查询操作</p>
-<h5 id="分库分表"><a href="#分库分表" class="headerlink" title="分库分表"></a>分库分表</h5><p>垂直分表：按字段分成多表，每个表存一部分字段（不常用的字段单独存放；大字段放在附表；经常查询的放在一个表）<br>垂直分库：按业务将表分类，分布到不同数据库，库可以放到不同服务器<br>水平分库：将同一个表的数据按一定规则分到不同数据库，每个库可以放在不同服务器<br>水平分表：在同一个数据库内将表中数据按一定规则拆成多个表</p>
-<h5 id="优化"><a href="#优化" class="headerlink" title="优化"></a>优化</h5><p>表分区,加索引,加视图,写存储过程,满足三范式.,<br>尽量不使用 not, (where 子句不包含or 操作，因为这些执行时不会使用索引)<br>可以使用in条件来替换<br>避免like的特殊形式 避免having子句尽可能在where 子句中指定条件,<br>尽量使用 inner join 而不使用多表</p>
-<p>explain</p>
-<p>脏读可重复读幻读和隔离级别</p>
-<h5 id="函数"><a href="#函数" class="headerlink" title="函数"></a>函数</h5><p>左连接（左所有，右边在左边有）和右连接（右所有与左边交集）<br>union 并集，自动去重，同时默认排序  union all 不去重并集，不排序</p>
-<p>left join 1=1 会得出笛卡尔积</p>
-<p>存储结构：存储过程就是编译好了的一些SQL语句。可以直接执行，所以执行效率较高。</p>
-<p>临时表  视图 存储过程 hbase </p>
-<h3 id="2、Redis"><a href="#2、Redis" class="headerlink" title="2、Redis"></a><strong>2、Redis</strong></h3><p>数据类型：string、list、hash、set、zset<br>redis6新增：Bitmaps、HyperLogLog 、HyperLogLog<br>穿透:无数据导致服务崩溃 空缓存 布隆过滤器(存在的不一定存在不存在的一定不存在)<br>失效:大量相同过期时间，设置一个随机过期时间<br>雪崩:定期重建(利用互斥锁(setex))或者熔断降级</p>
-<p>Redis 持久化：<br>RDB（Redis Database）：指定的时间间隔能对你的数据进行快照存储。<br>AOF（Append Only File）：每一个收到的写命令都通过write函数追加到文件中。</p>
-<h5 id="分布式锁"><a href="#分布式锁" class="headerlink" title="分布式锁"></a>分布式锁</h5><p>redis + lua脚本<br>看门狗机制：</p>
-<p>Redisson 锁的加锁机制如上图所示，线程去获取锁，获取成功则执行lua脚本，保存数据到redis数据库。</p>
-<p>如果获取失败: 一直通过while循环尝试获取锁(可自定义等待时间，超时后返回失败)，获取成功后，执行lua脚本，保存数据到redis数据库。</p>
-<p>Redisson提供的分布式锁是支持锁自动续期的，也就是说，如果线程仍旧没有执行完，那么redisson会自动给redis中的目标key延长超时时间，这在Redisson中称之为 Watch Dog 机制。<br>红锁<br>redis集群：<br>主从<br>项目中的拦截策略、限流：<br>redis+lua脚本进行限流：<br>生成一个固定大小令牌桶，以每秒固定速度生成令牌存放，拿不到令牌的请求被限制<br>启动类加@EnableRedisLimiting注解</p>
-<h3 id="3、JVM调优"><a href="#3、JVM调优" class="headerlink" title="3、JVM调优"></a><strong>3、JVM调优</strong></h3><p>内存溢出：OutOfMemoryError，是指没有空闲内存，垃圾收集器回收后也不能提供更多的内存空间；<br>内存泄露：它是指程序运行后，没有释放所占用的内存空间（程序中有引用没有释放，不能被GC回收）</p>
-<h5 id="JVM内存区域"><a href="#JVM内存区域" class="headerlink" title="JVM内存区域"></a>JVM内存区域</h5><p>堆（new对象）<br>栈（存变量）：先进后出，每调用一个方法就会分配一块栈帧内存区域，栈会存储某些对象的内存地址，指向堆中实际的对象<br>程序计数器（由字节码执行器修改行号 ）：当前线程运行的行号，用来记录多线程切换后要执行的位置<br>元空间：存放常量和静态变量、类信息<br>本地方法栈：底层jdk内部使用</p>
-<h5 id="垃圾回收算法"><a href="#垃圾回收算法" class="headerlink" title="垃圾回收算法"></a>垃圾回收算法</h5><p>1、标记–清除算法<br>标记：遍历内存区域，对需要回收的对象打上标记。清除：再次遍历内存，对已经标记过的内存进行回收。<br>缺点：效率问题；遍历了两次内存空间（第一次标记，第二次清除）。<br>空间问题：容易产生大量内存碎片，当再需要一块比较大的内存时，无法找到一块满足要求的，因而不得不再次出发GC。<br>2、复制算法<br>将内存划分为等大的两块，每次只使用其中的一块。当一块用完了，触发GC时，将该块中存活的对象复制到另一块区域，然后一次性清理掉这块没有用的内存。下次触发GC时将那块中存活的的又复制到这块，然后抹掉那块，循环往复。<br>3、 标记–整理算法<br>标记：对需要回收的进行标记。整理：让存活的对象，向内存的一端移动，然后直接清理掉没有用的内存。</p>
-<p>4、分代收集算法<br>新生代，每次都有大量对象死亡，有老年代作为内存担保，采取复制算法。<br>老年代，对象存活时间长，采用标记整理，或者标记清理算法都可。</p>
-<h5 id="调优参数"><a href="#调优参数" class="headerlink" title="调优参数"></a>调优参数</h5><p>-Xms2g：初始化堆的大小为2g<br>-Xmx2g：堆最大内存为2g<br>-XX:NewRatio=4：设置年轻和老年代的内存比例为1：4<br>-XX:SurvivorRatio=8：设置新生代Eden和Survivor比例为8：2<br>-XX:+UseParNewGc：指定使用ParNew + SerialOld垃圾回收器组合<br>-XX:+UseParallelOldGc：指定使用ParNew + ParNew Old垃圾回收器组合<br>-XX:+UseConcMarkSweepGc：指定使用CMS + Serial Old 垃圾回收器组合<br>-XX:+PrintGC：开始打印GC信息<br>-XX:+PrintGCDetails：打印GC详细信息<br>Serial收集器(复制算法)：新生代单线程收集器，标记和清理都是单线程，优点是简单高效;</p>
-<p>ParNew收集器(复制算法)：新生代收并行集器，实际上是Serial收集器的多线程版本，在多核CPU环境下有着比Serial更好的表现;</p>
-<p>Parallel Scavenge收集器(复制算法)：新生代并行收集器，追求高吞吐量，高效利用U量线程时间户线程时间+C线程时间)，高吞吐量可以高效率的利用CPU时间，尽快完成程序的运算任务，适合后台应用等对交互相应要求不高的场景;</p>
-<p>SerialOld收集器(标记-整理算法):老年代单线程收集器，Serial收集器的老年代版本;</p>
-<p>Parallel Old收集器(标记-整理算法):老年代并行收集器，吞吐量优先， Parallel Scavenge收集器的老年代版本;</p>
-<p>CMS(Concurrent MarkSweep)收集器(标记-清除算法);老年代并行收集器，以获取最短回收停顿时间为目标的收集器，具有高并发、低停顿的特点，追求最短GC回收停顿时间。</p>
-<p>G1(Garbage First)收集器(标记-整理算法):Java堆并行收集器，G1收集器是 JDK1.7提供的一个新收集器，G1收集器基于“标记-整理”算法实现，也就是说不会产生内存碎片。此外，G1收集器不同于之前的收集器的一个重要特点是:G1回收的范围是整个Java堆(包括新生代，老年代)，而前六种收集器回收的范围仅限于新生代或老年代。</p>
-<h3 id="4、集合"><a href="#4、集合" class="headerlink" title="4、集合"></a><strong>4、集合</strong></h3><h5 id="分类"><a href="#分类" class="headerlink" title="分类"></a>分类</h5><ul>
-<li><p><strong>Vector：Vector底层是数组结构，查询快，增删慢，线程安全，效率低</strong></p>
-</li>
-<li><p><strong>List（线性表、数组）：有序，可重复</strong></p>
-<p><strong>Arraylist</strong>：ArrayList底层是数组结构，元素无序可重复，具有索引，查询快，增删慢，线程不安全，效率高。（初始长度10，jdk1.7之前1.5+1扩容，1.7之后1.5扩容）<br><strong>Linkedlist</strong>：LinkedList底层是链表数据结构，元素有顺序且可以重复，但查询慢，增删快，线程不安全，效率高。</p>
-<p>对比：假设ArrayList指定了容量，相同数据量下可能会比LinkedList快，因为add方法可以在数组末尾添加元素，同时不涉及扩容，所以速度会快</p>
-</li>
-<li><p><strong>Set：无序不可重复，允许为空</strong></p>
-<p><strong>HashSet</strong>：HashSet 线程不安全，可以为空但只能有一个，存取速度快，底层实现是一个HashMap（保存数据），实现Set接口，默认初始容量为16。超过容量0.75时进行原容量×2扩容<br>TreeSet：是一个平衡二叉树，有序的不重复集合，元素自然升序，不允许为空<br>Queue（队列）：先进先出（FIFO）</p>
-</li>
-<li><p><strong>Map（键值对存储）：不可重复</strong></p>
-<p><strong>HashMap</strong>：基于hash算法实现，通过put（key,value）存储，get(key)来获取，key可以为null，传入key时根据key.hashcode()计算出hash值。hash冲突的个数少时用链表，否则使用红黑树(避免冲突过多出现线性链表，尾插法可以避免头插法在多线程扩容时产生的循环调用问题，即两个线程中某一个下标位置因为扩容导致的链表指向问题A-&gt;B,B-&gt;A)。允许为空，非同步，HashMap初始化大小是 16 ，超过容量0.75容量×2（可以自己指定初始化和扩容数），同时map的缩减可以通过 trimToSize（）实现<br>TreeMap：基于红黑树实现（右子树所有节点值≥每个结点值≥左子树所有值），线程安全，key和value不能为空，元素升序<br>HashTable：默认大小11，不能为空，线程安全<br>LinkedHashMap（有序map）：内部持有两个成员变量，head和tail，是双链表结点。<br> 在插入数据时，仍然调用HashMap的put方法，将数据保存在原先的数组+链表/红黑树的数据结构中，put方法中调用了newNode()。LinkedHashMap重写了newNode()方法，在newNode方法中，把新的结点插入双向链表。采用尾插法，保证了后插入的数据，位于双向链表的尾部。遍历时，从head结点开始遍历输出，输出顺序自然就和插入顺序一样。</p>
-</li>
-</ul>
-<h5 id="hashmap的put原理"><a href="#hashmap的put原理" class="headerlink" title="hashmap的put原理"></a>hashmap的put原理</h5><p>1:当传入一个k-v的时候，首先会根据hash()方法计算一个hash值（这个值不决定在数组的位置）<br>2:在put的时候才会进行数组的初始化，判断数组是否存在，如果不存在就调用resize()方法创建默认数组容量为16的数组<br>3:通过key的hash值与数组最大索引进行位运行，确定在数组中的位置<br>4:获取改位置是否有是否有元素，如果没有元素就创建一个新的Node节点元素存在在该数组中<br>5:如果该位置有元素的话就判断put进来的key与当前数组Node节点的key是否相同，如果相同的话就把就进行值的替换<br>6:当前的条件没有成立的话，判断该位置是红黑树还是链表<br>7:如果是红黑树，那么就把当前节点放在红黑树上面<br>8:如果是链表的话，就遍历该链表,把Node追加在链表中<br>9:这个时候也会去判断链表的长度，如果链表的长度超过8的话看是否需要树化(<br>会调用treeifyBin方法,如果数组容量小于64的话，就只会进行扩容,大于64才会转换为红黑树,在节点个数小于6时会转化回链表)<br>10:返回覆盖的值</p>
-<h3 id="5、spring"><a href="#5、spring" class="headerlink" title="5、spring"></a><strong>5、spring</strong></h3><p>spring底层组件：</p>
-<p>AnnotatedBeanDefinitionReader：把一个普通的类注册成BeanDefinition</p>
-<p>ClassPathBeanDefinitionScanner：扫面某个包下被@Conponent注解注释的类，将其注册成BeanDefinition放到spring容器</p>
-<p>DefaultListbleBeanFactory：</p>
-<p>AnnotationMetadata：可以获取类上的注解、类名等信息</p>
-<h5 id="springMVC流程"><a href="#springMVC流程" class="headerlink" title="springMVC流程"></a>springMVC流程</h5><p>1、 用户发送至前端控制器DispatchServlet<br>2 、前端控制器收到请求调用处理器映射器HandlerMapping<br>3 、DispatchServlet根据处理器Hander获取处理器适配器HandlerAdapter，并执行(参数封装，数据格式转换)<br>4 、执行处理器Hander (Controler)，执行完返回ModelAndView，HandlerAdapter将结果返回DispatchServlet<br>5 、DispatchServlet将ModeAndView传给视图解析器，视图解析器返回具体View<br>6 、DispatchServlet对View进行渲染(就是数据模型填充进视图)<br>7、DispatchServlet响应客户</p>
-<h5 id="mybatis原理流程"><a href="#mybatis原理流程" class="headerlink" title="mybatis原理流程"></a>mybatis原理流程</h5><p>1、加载器-&gt;得到xml对象<br>2、Xml对象-&gt;得到sqlsessionfactory.build方法build()方法生成sqlsessionfactory对象<br>3、sqlsessionfactory对象生成sqlsession对象sqlsession对象获取sql语句,<br>4、获取连接通道<br>5、获取连接对象,<br>6、执行sql语句,<br>7、关闭连接对象/通道</p>
-<h5 id="Bean的生命周期"><a href="#Bean的生命周期" class="headerlink" title="Bean的生命周期"></a>Bean的生命周期</h5><p>ioc实现的接口</p>
-<p>1、找到关于Bean的定义并实例化该Bean<br>2、对Bean进行依赖注入<br>3、如果Bean实现了BeanNameAware接口，则将该Bean的id传给setBeanName(可以知道自己的beanName)<br>4、如果Bean实现了BeanFactoryAware接口，将BeanFactory传给setBeanFactor方法（可以知道是由哪个bean工厂创建）<br>5、如果Bean实现了BeanPostProcessor接口，则调用其postProcessBeforeInitialization方法。<br>6、如果Bean实现了InitializingBean接口，则调用其afterPropertySet方法。<br>7、如果有和Bean关联的BeanPostProcessors对象,则这些对象的postProcessAfterlnitialzation方法被调用。<br>8、当销毁Bean实例时，如果Bean实现了DisposableBean接口，则调用其destroy方法。</p>
-<h5 id="Bean和-Autowired区别"><a href="#Bean和-Autowired区别" class="headerlink" title="@Bean和@Autowired区别"></a>@Bean和@Autowired区别</h5><ul>
-<li>@Bean 修饰的方法表示初始化一个对象并交由Spring IOC去管理,@Bean 只能和@Component @Repository @Controller @Service @Configration 配合使用.<br>@Autowired 可修饰变量和方法,用于完成自动装配(将需要的外部资源注入) 说白了，自动装配的前提你要先有才能装配，你直接引用资源就行，没有相当于白扯</li>
-<li>@Bean和@Autowired都是常用的注解但@Bean是将没有的注入到spring容器中@Autowired是将spring容器中已有的自动装配（组合）到另一个类中</li>
-</ul>
-<h5 id="事务问题"><a href="#事务问题" class="headerlink" title="事务问题"></a>事务问题</h5><ul>
-<li><p>事务传播机制</p>
-</li>
-<li><p>事务失效场景</p>
-<p>1.事务只在public访问修饰符生效</p>
-<p>2.方法被final（static）修饰</p>
-<p>3.在方法内调用定一个事务方法<br>实现事务前提是通过SpringAop生成代理对象，但方法内部是直接this（即当前 类实例.方法 -&gt; this.方法），所以事务失败<br>解决办法：1、 新加一个service方法</p>
-<p>​                     2、 在该类中注入自己，可以通过@Autowired的等注解</p>
-<p>​                     3、 通过AopContent类</p>
-<p>4.没被Spring管理</p>
-<p>5.多线程导致获取的数据库连接不一致，属于不同事务，无法回滚</p>
-<p>6.表不支持事务</p>
-<p>7.没开启事务</p>
-</li>
-</ul>
-<h3 id="6、springboot、Cloud"><a href="#6、springboot、Cloud" class="headerlink" title="6、springboot、Cloud"></a><strong>6、springboot、Cloud</strong></h3><h5 id="组件"><a href="#组件" class="headerlink" title="组件"></a>组件</h5><p>springcloud组件：Eureka(服务注册发现)、Feign(远程调用)、Ribbon(负载均衡)、Hytrix(熔断)、Zuul(路由)<br>springAlibaba：Nacos(服务注册发现)、Dubbo(远程调用)、Sentinal(熔断)、Seata(分布式事务)</p>
-<h5 id="Springboot"><a href="#Springboot" class="headerlink" title="Springboot"></a>Springboot</h5><ul>
-<li>自动装配：spring.factories</li>
-</ul>
-<h5 id="Dubbo："><a href="#Dubbo：" class="headerlink" title="Dubbo："></a>Dubbo：</h5><ul>
-<li><p>实现</p>
-<p>第一种：服务端使用@DubboService注解，然后在配置文件内通过scan-base-packages指定服务的service，消费端使用同时在配置文件内通过subcribed-services指定订阅的服务端名称，然后通过@DubboReference在注入的service上</p>
-<p>第二种：OpenFeign迁移dubbo：在feign接口上添加 @DubboTransported (protocol=“dubbo”)</p>
-</li>
-<li><p>负载均衡策略：</p>
-<table>
-<thead>
-<tr>
-<th>Random LoadBalance</th>
-<th>随机，按权重设置随机概率（默认）</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>RoundRobin LoadBalance</td>
-<td>轮询，按公约后的权重设置轮询比率</td>
-</tr>
-<tr>
-<td>LeastActive LoadBalance</td>
-<td>最少活跃调用数，相同活跃数的随机</td>
-</tr>
-<tr>
-<td>ConsistentHash LoadBalaclava</td>
-<td>一致性Hash，相同参数的请求总是发到同一提供者</td>
-</tr>
-</tbody></table>
-</li>
-</ul>
-<h5 id="Seata"><a href="#Seata" class="headerlink" title="Seata:"></a>Seata:</h5><ul>
-<li><p>AT模式：</p>
-<p>1、TM请求TC开启一个全局事务，会生成一个XID作为全局事务的编号，用来保证微服务的子事务关联在一起</p>
-<p>2、RM亲求TC将本地事务注册成分支事务，通过全局事务XID关联</p>
-<p>3、TM通知TC XID对应的事务是提交还是回滚</p>
-<p>4、TC驱动RM将XID对应自己的本地事务提交还是回滚</p>
-</li>
-</ul>
-<p>​                优点：对业务无入侵，是一种改进后的两阶段提交</p>
-<p>​                设计思路：第一阶段业务数据和回滚日志（将记录放入undolog表）直接在一个事务中提交，释放本地锁和连接资源，第二阶段成功则删除回滚日志，失败则通过回滚日志进行反向补偿（通过封装的JDBC的前置镜像和后置镜像，所以产生的缺点就是会执行四次SQL操作，效率低）</p>
-<p>​        需要注意的是存在脏写数据出错场景，检查后置镜像和实际值是否相等时会出错，此时只能手动处理，另一种解决办法就是设置全局锁，把操作id放入全局锁</p>
-<h3 id="7、MQ："><a href="#7、MQ：" class="headerlink" title="7、MQ："></a><strong>7、MQ：</strong></h3><p>MQ三大作用:异步 削峰 解耦</p>
-<h5 id="RabbitMQ"><a href="#RabbitMQ" class="headerlink" title="RabbitMQ"></a>RabbitMQ</h5><ol>
-<li><p>集群搭建：</p>
-<ul>
-<li><p>普通集群（效率略低，因为会去其他节点临时拉取消息）</p>
-<p>该模式下节点之间只通过erlang语言存元数据（Exchange、Queue），不会冗余消息。消息只在请求的时候临时同步</p>
-</li>
-<li><p>镜像模式（有一定数据延迟，但是所有节点存储全量数据）</p>
-<p>数据主动在各个节点间进行同步，需要在普通模式上配置一个策略</p>
-</li>
-</ul>
-<p>RAM模式下元数据不会被持久化，disc模式下会被持久化，消息</p>
-</li>
-</ol>
-<h5 id="RocketMQ"><a href="#RocketMQ" class="headerlink" title="RocketMQ"></a>RocketMQ</h5><ul>
-<li>Name Server是一个几乎无状态节点，可集群部署，节点之间无任何信息同步。</li>
-<li>Broker部署相对复杂，Broker分为Master与Slave，一个Master可以对应多个Slave，但是一个Slave只能对应一个Master，Master与Slave的对应关系通过指定相同的BrokerName，不同的BrokerId来定义，BrokerId为0表示Master，非0表示Slave。Master也可以部署多个。每个Broker与Name Server集群中的所有节点建立长连接，定时注册Topic信息到所有Name Server。</li>
-<li>Producer与Name Server集群中的其中一个节点（随机选择）建立长连接，定期从Name Server取Topic路由信息，并向提供Topic服务的Master建立长连接，且定时向Master发送心跳。Producer完全无状态，可集群部署。</li>
-</ul>
-<p>4.1、生产者发送消息:同步确认和异步确认<br>消息存盘时不丢失:经典队列:持久化队列新出的两个Quorum和Stream自带持久化属性主从复制时丢失:镜像集群<br>消费者不丢失:自动应答:失败重试，不丢失，但是会重复消费，也可以进行手动应答<br>4.2不重复消费:给每个消息一个messageld做幂等判断</p>
-<h3 id="8、多线程"><a href="#8、多线程" class="headerlink" title="8、多线程"></a><strong>8、多线程</strong></h3><h5 id="线程池参数："><a href="#线程池参数：" class="headerlink" title="线程池参数："></a>线程池参数：</h5><p>corePoolSize：核心线程数除非设置allowCoreThreadTimeOut，否则一直存在<br>maximumPoolSize：池中允许的最大线程数<br>keepAliveTime：当线程数大于核心时，这是多余的空闲线程在终止前等待新任务的最长时间。 unit：keepAliveTime参数的时间单位<br>workQueue：用于在执行任务之前保存任务的队列<br>threadFactory：执行器创建新线程时要使用的工厂<br>Handler：决绝策略</p>
-<p>提交优先级（execute方法）</p>
-<p>执行优先级</p>
-<h5 id="一个任务提交到线程池的处理："><a href="#一个任务提交到线程池的处理：" class="headerlink" title="一个任务提交到线程池的处理："></a>一个任务提交到线程池的处理：</h5><p>首先判断核心线程是否已满，不满创建线程执行，否则判断阻塞对列是否已满，不满任务添加到队列中，否则判断是否达到最大线程数，没达到创建非核心线程执行任务，否则按照拒绝策略<br>(丢弃报错(默认)/丢弃不报错/丢弃旧任务，将第一个扔出/谁提交谁执行)处理无法执行的任务</p>
-<h3 id="9、http协议"><a href="#9、http协议" class="headerlink" title="9、http协议"></a><strong>9、http协议</strong></h3><p>​            1. TCP/IP五层模型：</p>
-<p>​                应用层-传输层-网络层-数据链路层-物理层</p>
-<ol start="2">
-<li>常见的请求方式：</li>
-</ol>
-<p>GET: 通常用于请求服务器发送某些资源<br>POST: 发送数据给服务器<br>PUT: 用于新增资源或者使用请求中的有效负载替换目标资源的表现形式<br>PATCH: 用于对资源进行部分修改<br>DELETE: 用于删除指定的资源</p>
-<ol start="3">
-<li>get和post区别</li>
-</ol>
-<ul>
-<li>数据传输方式不同：GET请求通过URL传输数据，而POST的数据通过请求体传输。</li>
-<li>安全性不同：POST的数据因为在请求主体内，所以有一定的安全性保证，而GET的数据在URL中，通过历史记录，缓存很容易查到数据信息。数据类型不同：GET只允许 ASCII 字符，而POST无限制</li>
-<li>GET无害： 刷新、后退等浏览器操作GET请求是无害的，POST可能重复提交表单</li>
-<li>特性不同：GET是安全（这里的安全是指只读特性，就是使用这个方法不会引起服务器状态变化）且幂等（幂等的概念是指同一个请求方法执行多次和仅执行一次的效果完全相同），而POST是非安全非幂等</li>
-</ul>
-<ol start="4">
-<li>Http协议有什么组成？<br>请求报文包含三部分：请求行：包含请求方法、URI、HTTP版本信息；请求首部字段；请求内容实体。</li>
-<li>三次握手四次挥手</li>
-</ol>
-<ul>
-<li>三次握手：<br>1、第一次握手：客户端给服务器发送一个 SYN 报文。<br>   2、第二次握手：服务器收到 SYN 报文之后，会应答一个 SYN+ACK 报文。<br>   3、第三次握手：客户端收到 SYN+ACK 报文之后，会回应一个 ACK 报文。<br>   4、服务器收到 ACK 报文之后，三次握手建立完成。</li>
-<li>四次挥手：<br>1、第一次挥手：客户端发送一个 FIN 报文，报文中会指定一个序列号。此时客户端处于FIN_WAIT1状态。<pre><code>2、第二次握手：服务端收到 FIN 之后，会发送 ACK 报文，且把客户端的序列号值 + 1 作为 ACK 报文的序列号值，表明已经收到客户端的报文了，此时服务端处于 CLOSE_WAIT状态。
-3、第三次挥手：如果服务端也想断开连接了，和客户端的第一次挥手一样，发给 FIN 报文，且指定一个序列号。此时服务端处于 LAST_ACK 的状态。
-4、第四次挥手：客户端收到 FIN 之后，一样发送一个 ACK 报文作为应答，且把服务端的序列号值 + 1 作为自己 ACK 报文的序列号值，此时客户端处于 TIME_WAIT 状态。需要过一阵子以确保服务端收到自己的 ACK 报文之后才会进入 CLOSED 状态
-5、服务端收到 ACK 报文之后，就处于关闭连接了，处于 CLOSED 状态
-</code></pre>
-</li>
-</ul>
-<h3 id="10、锁"><a href="#10、锁" class="headerlink" title="10、锁"></a><strong>10、锁</strong></h3><h5 id="synchronized和lock区别"><a href="#synchronized和lock区别" class="headerlink" title="synchronized和lock区别"></a>synchronized和lock区别</h5><p>1、synchronized是Java内置关键字，lock是个类<br>2、synchronized无法判断是否获取锁的状态，lock可以判断是否获取到锁<br>3、synchronized会自动释放锁，lock需要手动通过unlock（）释放锁，否则容易造成进程死锁<br>4、synchronized锁可重入，不可中断，非公平，lock给可入，可公平<br>5、lock适合大量同步代码，synchronized是和少量代码同步<br>6、synchronized当一个线程阻塞另一个会一直等待，lock不会</p>
-<h3 id="11、设计模式"><a href="#11、设计模式" class="headerlink" title="11、设计模式"></a><strong>11、设计模式</strong></h3><p>工厂模式：我们在创建对象时不会对客户端暴露创建逻辑，并且是通过使用一个共同的接口来指向新创建的对象。</p>
-<p>建造者模式：构建复杂对象</p>
-<p>模板模式：一个接口，不同实现类 </p>
-<p>适配器模式：为接口增加新功能，可以通过实现新接口方式</p>
-<p>单例 代理 责任链 </p>
-<h3 id="12、问题："><a href="#12、问题：" class="headerlink" title="12、问题："></a><strong>12、问题：</strong></h3><p>12.1、权限表</p>
-<p>用户表 角色表 权限表 用户角色表 角色权限表</p>
-<p>12.2、什么时候会触发回滚</p>
-<p>在java中异常的基类为Throwable，他有两个子类xception与Errors。同时RuntimeException就是Exception的子类，只有RuntimeException才会进行回滚；Spring事务回滚机制是这样的：当所拦截的方法有指定异常抛出，事务才会自动进行回滚！<br>可以通过：TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();来设置手动回滚，该方法可以让trycatch后也可以回滚</p>
-<p>linux命令<br>tcp数据传输<br>数据库和redis读写不一致<br>压测返回数据怎么在后端获取<br>集合的扩容缩减<br>多线程<br>接口间通信协议<br>springboot注解<br>nacos、eureka是怎么实现服务注册发现的<br>pom依赖加相关配置<br>线程之间的通信，<br>加密算法<br>分布式事务注解？？？ openFeign<br>怎么开启分布式事务<br>前端传递过来json格式如何解决</p>
-<p>@Component和@Configuration区别</p>
-<p>http tcp</p>
-<p>学习目标：</p>
-<p>湖仓一体化 Hbase<br>dataworks 数据中台</p>
-<p>主要的技术类问题，包括但不限于这些方面：Java基础，Spring实践，多线程，缓存，消息队列，数据库优化，分库分表等方面，以下列举常见问题：<br>jvm理解， gc算法机制；<br>线程池使用；<br>spring事务传播行为；<br>spring cloud gateway服务安全认证；<br>spring Cloud启动加载过程；<br>反向代理模式；<br>rabbitmq的消息防止丢失；<br>消息堆积的处理；<br>mysql调优的方法；<br>长sql的慢查询；<br>mysql explain；<br>数据库分库分表；<br>线程池的使用；<br>架构设计的原则，考虑方面，关键点；<br>常用加密算法；<br>redis持久化，redis重启，<br>雪花算法；<br>Netty框架；通信交互；</p>
+            <h3 id="1、Mysql"><a href="#1、Mysql" class="headerlink" title="1、Mysql"></a><strong>1、Mysql</strong></h3><h5 id="select-执行流程"><a href="#select-执行流程" class="headerlink" title="select * 执行流程"></a>select * 执行流程</h5><p>1、首先建立连接：通过用户名和密码与Mysql服务器建立连接，用户名密码不对会报错<br>2、查询缓存：之前查询过的sql结果会以key-value形式存储到内存，有就直接返回，没有执行后续（update会使缓存失效）<br>3、解析器解析：分析sql语法是否正确<br>4、优化器优化：走那个索引，join选择表的顺序<br>5、执行器：权限检查，先打开数据表，然后优化器根据存储引擎执行查询操作</p>
 
         </div>
         <footer class="article-footer">
@@ -370,7 +188,7 @@
 
 
 
-    <a data-url="http://example.com/force/index.html" data-id="clfm5arta0004agtgdgpje09n" class="article-share-link"><i class="fa fa-share"></i>Share</a>
+    <a data-url="http://example.com/force/index.html" data-id="clfm5qpu800038ktg2lvw5p29" class="article-share-link"><i class="fa fa-share"></i>Share</a>
 <script>
     (function ($) {
         $('body').on('click', function() {
@@ -446,10 +264,10 @@
         
         "datePublished": "2023-03-24",
         "dateCreated": "2023-03-24",
-        "dateModified": "2023-02-01",
+        "dateModified": "2023-03-24",
         "url": "http://example.com/force/index.html",
-        "description": "项目问题：实际生产过程中，有一批数据需要从redis同步到mysql种，但数据量比较大，大概在十万行左右，每个数据属性在1000左右，属性以json格式存储到myisam引擎中，选择mysaim的原因是innodb存在单行长度限制，同时根据业务需要进行了垂直分表，把常用的字段单独建表存储我需要拼接一个超长字符串insert into sql，首先我想到的办法是用并行流，但是在实际操作过程中，并行流",
-        "wordCount": 447
+        "description": "1、Mysqlselect * 执行流程1、首先建立连接：通过用户名和密码与Mysql服务器建立连接，用户名密码不对会报错2、查询缓存：之前查询过的sql结果会以key-value形式存储到内存，有就直接返回，没有执行后续（update会使缓存失效）3、解析器解析：分析sql语法是否正确4、优化器优化：走那个索引，join选择表的顺序5、执行器：权限检查，先打开数据表，然后优化器根据存储引擎执行查",
+        "wordCount": 13
     }
 </script>
 
